@@ -18,6 +18,7 @@ SHARED_DIR = Path("/shared/downloads")
 class DownloadRequest(BaseModel):
     url: str
     audio_only: bool = False
+    output_dir: str | None = None
 
 
 @app.post("/download")
@@ -95,8 +96,13 @@ def download(req: DownloadRequest):
     # Copy to shared volume for inter-service access
     shared_path = None
     try:
-        SHARED_DIR.mkdir(parents=True, exist_ok=True)
-        shared_dest = SHARED_DIR / expected_name
+        if req.output_dir:
+            out = Path(req.output_dir)
+            out.mkdir(parents=True, exist_ok=True)
+            shared_dest = out / expected_name
+        else:
+            SHARED_DIR.mkdir(parents=True, exist_ok=True)
+            shared_dest = SHARED_DIR / expected_name
         shutil.copy2(str(expected_path), str(shared_dest))
         shared_path = str(shared_dest)
     except Exception:
